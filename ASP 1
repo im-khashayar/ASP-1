@@ -1,0 +1,113 @@
+module Main exposing (..)
+
+import Browser
+import Html exposing (Html, button, div, input, text)
+import Html.Attributes exposing (placeholder, value)
+import Html.Events exposing (onClick, onInput)
+
+-- STACK "STRUCT"
+type alias Stack =
+    { elements : List Int
+    , maxSize : Int
+    }
+
+-- "Constructor" to initialize a Stack
+initStack : Int -> Stack
+initStack maxSize =
+    { elements = [], maxSize = maxSize }
+
+-- "Methods" for the Stack
+push : Int -> Stack -> Stack
+push value stack =
+    if List.length stack.elements < stack.maxSize then
+        { stack | elements = value :: stack.elements }
+    else
+        stack -- If stack is full, no changes
+
+pop : Stack -> Stack
+pop stack =
+    case stack.elements of
+        [] ->
+            stack -- If stack is empty, no changes
+
+        _ :: rest ->
+            { stack | elements = rest }
+
+top : Stack -> Maybe Int
+top stack =
+    case stack.elements of
+        [] ->
+            Nothing
+
+        value :: _ ->
+            Just value
+
+isEmpty : Stack -> Bool
+isEmpty stack =
+    List.isEmpty stack.elements
+
+-- Method to display the stack
+viewStack : Stack -> String
+viewStack stack =
+    "Stack contents: " ++ String.join ", " (List.map String.fromInt stack.elements)
+
+-- APPLICATION MODEL
+type alias Model =
+    { stack : Stack
+    , inputValue : String -- Holds user input as a string
+    }
+
+-- Initialize the application Model
+init : Model
+init =
+    { stack = initStack 5 -- Create a Stack with maxSize = 5
+    , inputValue = "46874410" -- Default input
+    }
+
+-- UPDATE LOGIC
+type Msg
+    = Push Int
+    | Pop
+    | UpdateInput String -- Update the input field
+
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        Push value ->
+            Debug.log "Pushing value" value
+                |> (\_ -> { model | stack = push value model.stack }) -- Use the push method
+
+        Pop ->
+            Debug.log "Popping value" model.stack.elements
+                |> (\_ -> { model | stack = pop model.stack }) -- Use the pop method
+
+        UpdateInput newValue ->
+            Debug.log "Updating input" newValue
+                |> (\_ -> { model | inputValue = newValue }) -- Update the input field
+
+-- VIEW LOGIC
+view : Model -> Html Msg
+view model =
+    div []
+        [ div [] [ text (viewStack model.stack) ] -- Use the viewStack method
+        , div []
+            [ input
+                [ placeholder "Enter a number"
+                , value model.inputValue
+                , onInput UpdateInput
+                ]
+                []
+            , button
+                [ onClick (case String.toInt model.inputValue of
+                    Just num -> Push num
+                    Nothing -> Pop -- Default for invalid input
+                ) ]
+                [ text "Push" ]
+            ]
+        , button [ onClick Pop ] [ text "Pop" ]
+        ]
+
+-- MAIN ENTRY POINT
+main =
+    Browser.sandbox { init = init, update = update, view = view }
+
